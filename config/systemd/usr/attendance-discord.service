@@ -1,0 +1,15 @@
+[Unit]
+Description=attendance discord notifier
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/nfc
+EnvironmentFile=-%h/nfc/config/attendance/discord.env
+ExecStart=/usr/bin/python3 -u %h/nfc/core/attendance_discord.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

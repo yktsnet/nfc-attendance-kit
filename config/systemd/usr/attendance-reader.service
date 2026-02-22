@@ -1,0 +1,15 @@
+[Unit]
+Description=attendance reader (pcsc)
+After=pcscd.service
+Wants=pcscd.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/nfc
+ExecStart=/usr/bin/python3 -u /opt/nfc/core/attendance_reader.py
+Restart=always
+RestartSec=1
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

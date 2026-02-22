@@ -1,0 +1,9 @@
+[Unit]
+Description=attendance payroll daily
+
+[Timer]
+OnCalendar=*-*-* 15:05:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

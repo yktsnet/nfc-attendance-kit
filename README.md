@@ -1,6 +1,6 @@
-# NFC Attendance & Payroll System (IoT Demo)
+# NFC Attendance & Payroll Kit
 
-An end-to-end IoT solution optimized for high-utility, low-budget deployments using legacy hardware like Raspberry Pi 2 and repurposed laptops for kiosk dashboards.
+A production-ready, end-to-end IoT kit optimized for high-utility, low-budget deployments using legacy hardware like Raspberry Pi 2 and repurposed laptops.
 
 ```mermaid
 flowchart LR
@@ -25,7 +25,7 @@ flowchart LR
 <summary>🇯🇵 日本語による説明を表示する</summary>
 
 ## システム概要
-Raspberry Pi 2 や旧型ラップトップ等の既存資産を活用し、低予算で実用的な現場環境を構築することに特化した、勤怠追跡および自動給与計算の統合ソリューション。
+Raspberry Pi 2 や旧型ラップトップ等の既存資産を活用し、低予算で実用的な現場環境を構築することに特化した、勤怠追跡および自動給与計算のデプロイメントキット。
 
 ## システムアーキテクチャ
 1. **エッジ (Pi 2)**: Sony RC-S300をPCSC経由で制御。低リソース環境下で安定したNFC UIDキャプチャを実行。
@@ -38,6 +38,12 @@ Raspberry Pi 2 や旧型ラップトップ等の既存資産を活用し、低�
 - **打刻の異常検知**: 打刻忘れ、日またぎの勤務、重複スキャンを自動検知しフラグ（`missing_out`, `cross_day`等）を付与。
 - **堅牢な同期**: ネットワークの不安定性に備えたAPIリトライロジックの実装。
 - **動的ルール適用**: 従業員個別の環境変数ファイルを用いた、時給および丸め単位（分）の柔軟な適用。
+
+## 導入手順 (Getting Started)
+本キットのセットアップおよび実稼働へのデプロイメントに関しては、以下の設定プロセスが必要です。
+- エッジデバイスの環境構築および `systemd` へのサービス登録
+- GASのウェブアプリケーションとしてのデプロイ
+- 環境変数による従業員マスタおよびWebhookの設定
 </details>
 
 ## System Architecture
@@ -51,6 +57,12 @@ Raspberry Pi 2 や旧型ラップトップ等の既存資産を活用し、低�
 - **Anomaly Detection**: Automatically flags missing check-outs, cross-day shifts, and duplicate scans.
 - **Robust Sync**: Built-in API error handling and retry loops for network unreliability.
 - **Dynamic Rules**: Employee-specific hourly rates and rounding intervals managed via isolated `.env` files.
+
+## Getting Started
+To deploy this kit to your environment, the following configuration steps are required:
+- Registering Python scripts as `systemd` services on the edge device.
+- Deploying Google Apps Script as a Web App.
+- Configuring employee credentials and webhooks via `.env` files.
 
 ## Tech Stack
 - **Language**: Python 3.12, JavaScript (GAS)

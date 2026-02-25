@@ -3,7 +3,10 @@
 A production-ready, end-to-end IoT kit optimized for high-utility, low-budget deployments using legacy hardware like Raspberry Pi 2 and repurposed laptops.
 
 <p align="center">
-  <img src="./src/nfc-attendance-kit.svg" alt="NFC Attendance Kit Architecture" width="800">
+  <picture>
+    <source media="(min-width: 800px)" srcset="./src/nfc-attendance-kit.svg" width="400">
+    <img src="./src/nfc-attendance-kit.svg" alt="NFC Attendance Kit Architecture" style="max-width: 100%;" width="800">
+  </picture>
 </p>
 
 <details>

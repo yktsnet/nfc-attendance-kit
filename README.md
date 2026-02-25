@@ -2,24 +2,9 @@
 
 A production-ready, end-to-end IoT kit optimized for high-utility, low-budget deployments using legacy hardware like Raspberry Pi 2 and repurposed laptops.
 
-```mermaid
-flowchart LR
-    subgraph Edge_Unit["Edge: Raspberry Pi 2"]
-        B("Python Logic")
-        Reader["Sony RC-S300 (PCSC)"]
-    end
-    subgraph Kiosk_Unit["Dashboard: Old Laptop"]
-        E["Discord Server"]
-        F["Kiosk Display (Discord View)"]
-    end
-    
-    User(["Staff Member"]) -- Tap --> NFC["NFC Card / Mobile"]
-    Reader -- UID --> B
-    B -- HTTPS --> C["Google Apps Script"]
-    C -- Update --> D[("Google Sheets (Master Data)")]
-    B -- Webhook --> E
-    E -- "Real-time Sync" --> F
-```
+<p align="center">
+  <img src="./src/nfc-attendance-kit.svg" alt="NFC Attendance Kit Architecture" width="800">
+</p>
 
 <details>
 <summary>🇯🇵 日本語による説明を表示する</summary>

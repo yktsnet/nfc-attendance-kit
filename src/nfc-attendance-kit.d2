@@ -1,0 +1,93 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 200
+    # 手書き風（Sketch mode）を有効化
+    sketch: true
+  }
+}
+
+classes: {
+  box_node: {
+    style: {
+      stroke-width: 1
+      border-radius: 6
+      fill: "#1e293b"
+      stroke: "#334155"
+      font-color: "#f1f5f9"
+    }
+  }
+  accent_node: {
+    style: {
+      stroke-width: 2
+      border-radius: 6
+      fill: "#0f172a"
+      stroke: "#3b82f6"
+      font-color: "#60a5fa"
+    }
+  }
+  container_box: {
+    style: {
+      fill: "#0f172a"
+      stroke: "#1e293b"
+      stroke-dash: 0
+      border-radius: 12
+    }
+  }
+}
+
+direction: down
+
+# Layer 1: User Action
+User: "Staff Member" {
+  shape: person
+  style: {
+    fill: "#3b82f6"
+    stroke: "#60a5fa"
+  }
+}
+
+# Layer 2: Edge Processing
+Edge: "Edge Node (Pi2)" {
+  class: container_box
+  
+  Reader: "NFC Reader" { class: box_node }
+  Logic: "Python Service" {
+    class: accent_node
+    shape: hexagon
+  }
+  Reader -> Logic: "UID Scan" { 
+    style: { stroke: "#3b82f6"; stroke-width: 2 } 
+  }
+}
+
+# Layer 3: Data Destinations (Cloud & Kiosk)
+Cloud: "Cloud Backend" {
+  class: container_box
+  GAS: "API Gateway (GAS)" { class: box_node }
+  Sheets: "Database (Google Sheets)" { 
+    shape: cylinder
+    class: box_node 
+  }
+  GAS -> Sheets: "Sync" { style: { stroke: "#3b82f6" } }
+}
+
+Kiosk: "Dashboard (Old Laptop)" {
+  class: container_box
+  Webhook: "Discord Webhook" { class: box_node; shape: cloud }
+  Display: "Kiosk View" { class: box_node }
+  Webhook -> Display: "Real-time UI" { style: { stroke: "#3b82f6" } }
+}
+
+# Global Connections
+User -> Edge.Reader: "NFC Tap" {
+  style: { stroke: "#3b82f6"; stroke-width: 3; animated: true }
+}
+
+Edge.Logic -> Cloud.GAS: "HTTPS POST" {
+  style: { stroke: "#3b82f6"; stroke-dash: 4; animated: true }
+}
+
+Edge.Logic -> Kiosk.Webhook: "JSON Payload" {
+  style: { stroke: "#3b82f6"; stroke-dash: 4; animated: true }
+}

@@ -1,3 +1,12 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# secrets - never commit real values
+config/attendance/discord.env
+config/attendance/gas.env
+config/employees/*.env
+!config/employees/*.env.example
+
+# runtime state (attendance logs, payroll cache)
+state/

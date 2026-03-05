@@ -333,7 +333,7 @@ function pv_cellStr_(v) {
 function pv_flagsParse_(v) {
   if (v === null || v === undefined) return [];
   if (typeof v === "number" && v === 0) return [];
-  if (Array.isArray(v)) return pv_flagsClean_(arr);
+  if (Array.isArray(v)) return pv_flagsClean_(v); // fix: arr -> v
   var s = String(v).trim();
   if (!s || s === "0") return [];
   if (s[0] === "[" && s[s.length - 1] === "]") {

@@ -6,10 +6,9 @@ var PAYROLL_VIEW_SUMMARY_PREV = "Summary_PrevMonth";
 var PAYROLL_VIEW_THIS = "ThisMonth";
 var PAYROLL_VIEW_PREV = "PrevMonth";
 
+// Map employee IDs to display names shown in spreadsheet tabs and summary sheets.
+// Keys must match the emp values in config/attendance/uid_map.json.
 var PAYROLL_VIEW_EMP_LABELS = {
-  "emp01": "Sample_User",
-  "emp02": "Sample_User",
-  "emp03": "Sample_User"
 };
 
 function refreshPayrollViews() {

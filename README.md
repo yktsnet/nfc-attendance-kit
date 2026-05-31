@@ -1,3 +1,5 @@
+hi
+
 # NFC Attendance & Payroll System
 
 [![CI](https://github.com/yktsnet/nfc-attendance-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/yktsnet/nfc-attendance-kit/actions/workflows/ci.yml)

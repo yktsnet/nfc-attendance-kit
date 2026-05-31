@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from lib.attendance_store import iter_events_month, month_key
@@ -14,7 +14,7 @@ _TIMEOUT = timedelta(hours=15)
 @dataclass
 class CardState:
     inside: bool
-    last_ts: object
+    last_ts: datetime
     emp: str
 
 
@@ -37,7 +37,7 @@ class State:
         return st
 
 
-def apply_rules(st: State, ts, uid: str, emp: str) -> list[dict]:
+def apply_rules(st: State, ts: datetime, uid: str, emp: str) -> list[dict]:
     if uid in st.uid_last_seen:
         if ts - st.uid_last_seen[uid] < _DEBOUNCE:
             return []
@@ -57,6 +57,7 @@ def apply_rules(st: State, ts, uid: str, emp: str) -> list[dict]:
         cs.emp = emp
 
     events = []
+    # _errors_for_uid は state を書き換える可能性があるため、呼び出し後に cs を再取得する
     events.extend(_errors_for_uid(st, ts, uid))
     cs = st.uid_state[uid]
 
@@ -71,22 +72,16 @@ def apply_rules(st: State, ts, uid: str, emp: str) -> list[dict]:
     return events
 
 
-def sweep_errors(st: State, ts) -> list[dict]:
+def sweep_errors(st: State, ts: datetime) -> list[dict]:
     events = []
-    for uid, cs in list(st.uid_state.items()):
-        if not cs.inside:
+    for uid in list(st.uid_state.keys()):
+        if not st.uid_state[uid].inside:
             continue
-        if date_jst(cs.last_ts) != date_jst(ts):
-            events.append(_event(ts, uid, cs.emp, "ERROR", "day_rollover"))
-            st.uid_state[uid] = CardState(inside=False, last_ts=ts, emp=cs.emp)
-            continue
-        if ts - cs.last_ts > _TIMEOUT:
-            events.append(_event(ts, uid, cs.emp, "ERROR", "timeout_15h"))
-            st.uid_state[uid] = CardState(inside=False, last_ts=ts, emp=cs.emp)
+        events.extend(_errors_for_uid(st, ts, uid))
     return events
 
 
-def _errors_for_uid(st: State, ts, uid: str) -> list[dict]:
+def _errors_for_uid(st: State, ts: datetime, uid: str) -> list[dict]:
     cs = st.uid_state[uid]
     if not cs.inside:
         return []
@@ -99,7 +94,7 @@ def _errors_for_uid(st: State, ts, uid: str) -> list[dict]:
     return []
 
 
-def _event(ts, uid: str, emp: str, act: str, code) -> dict:
+def _event(ts: datetime, uid: str, emp: str, act: str, code) -> dict:
     o = {"id": uuid.uuid4().hex, "ts": ts, "uid": uid, "emp": emp, "act": act}
     if act == "ERROR" and code:
         o["code"] = code

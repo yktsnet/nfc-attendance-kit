@@ -2,11 +2,13 @@ import hashlib
 from collections import defaultdict
 from pathlib import Path
 
-from lib.env_loader import load_employee_env, env_int
-from lib.time_jst import parse_iso, date_jst
+from lib.env_loader import env_int, load_employee_env
+from lib.time_jst import date_jst, parse_iso
 
 
-def build_daily_payroll_records(repo_root: Path, events: list[dict]) -> tuple[list[dict], dict]:
+def build_daily_payroll_records(
+    repo_root: Path, events: list[dict]
+) -> tuple[list[dict], dict]:
     parsed = []
     unknown_emp = 0
 
@@ -31,9 +33,9 @@ def build_daily_payroll_records(repo_root: Path, events: list[dict]) -> tuple[li
 
     parsed.sort(key=lambda x: x[0])
 
-    open_in = {}
-    mins = defaultdict(int)
-    flags = defaultdict(set)
+    open_in: dict = {}
+    mins: dict = defaultdict(int)
+    flags: dict = defaultdict(set)
 
     for ts, emp, act, code in parsed:
         d = str(date_jst(ts))
@@ -41,6 +43,9 @@ def build_daily_payroll_records(repo_root: Path, events: list[dict]) -> tuple[li
 
         if act == "IN":
             if emp in open_in:
+                # 前回の IN に対応する OUT がない。d0 キーに missing_out を記録する
+                d0 = str(date_jst(open_in[emp]))
+                flags[(emp, d0)].add("missing_out")
                 flags[key].add("double_in")
             open_in[emp] = ts
             continue
@@ -96,8 +101,8 @@ def build_daily_payroll_records(repo_root: Path, events: list[dict]) -> tuple[li
 
         rounded = (raw_min // unit) * unit
         yen = (rounded * hourly) // 60
-
         rid = _rid(d, emp)
+
         if fset:
             flags_days += 1
 

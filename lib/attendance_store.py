@@ -1,7 +1,10 @@
 import json
+import logging
 from pathlib import Path
 
 from lib.time_jst import iso_jst
+
+logger = logging.getLogger(__name__)
 
 
 def month_key(dt) -> str:
@@ -9,15 +12,11 @@ def month_key(dt) -> str:
 
 
 def month_events_path(repo_root: Path, dt) -> Path:
-    p = repo_root / "state" / "attendance" / "events" / f"{month_key(dt)}.jsonl"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
+    return repo_root / "state" / "attendance" / "events" / f"{month_key(dt)}.jsonl"
 
 
 def month_payroll_path(repo_root: Path, ym: str) -> Path:
-    p = repo_root / "state" / "attendance" / "payroll" / f"{ym}.jsonl"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
+    return repo_root / "state" / "attendance" / "payroll" / f"{ym}.jsonl"
 
 
 def append_event(path: Path, ev: dict) -> None:
@@ -25,6 +24,7 @@ def append_event(path: Path, ev: dict) -> None:
 
 
 def append_jsonl(path: Path, obj: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     with open(path, "a", encoding="utf-8") as f:
         f.write(line + "\n")
@@ -44,13 +44,14 @@ def _iter_jsonl(path: Path):
     if not path.exists():
         return
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
+        for lineno, line in enumerate(f, 1):
             s = line.strip()
             if not s:
                 continue
             try:
                 o = json.loads(s)
-            except Exception:
+            except Exception as e:
+                logger.warning("skipped malformed line %d in %s: %s", lineno, path, e)
                 continue
             if isinstance(o, dict):
                 yield o

@@ -1,6 +1,9 @@
 # NFC Attendance & Payroll System
 
-An NFC-based attendance and payroll calculation script set designed to run on legacy hardware like Raspberry Pi 2 and repurposed PCs.
+[![CI](https://github.com/yktsnet/nfc-attendance-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/yktsnet/nfc-attendance-kit/actions/workflows/ci.yml)
+
+Sony RC-S300（PaSoRi）と Raspberry Pi を組み合わせた打刻・給与計算システム。
+**NFC カードをタッチするだけ**で打刻が完了し、Discord 通知と Google スプレッドシートへの自動集計まで行う。
 
 <p align="center">
   <picture>
@@ -9,74 +12,39 @@ An NFC-based attendance and payroll calculation script set designed to run on le
   </picture>
 </p>
 
-<details>
-<summary>🇯🇵 日本語による説明を表示する</summary>
+## Architecture
 
-## システム概要
-Raspberry Pi 2や旧型PCなどの既存ハードウェアを利用した勤怠管理および給与計算システムです。
+| コンポーネント | 役割 |
+|--------------|------|
+| **Edge (Pi 2)** | Sony RC-S300 を PCSC 経由で制御し NFC UID を取得 |
+| **ロジック** | 5 分デバウンス・15 時間タイムアウト・日またぎ判定を Python で処理 |
+| **バックエンド (GAS)** | HTTPS API 経由で Google スプレッドシートへ同期 |
+| **通知** | Discord Webhook でリアルタイムフィードバック |
 
-## 設計方針
-利用者の操作をICカードのタッチのみに限定して設計されています。
-- **シンプルな操作**: 従業員は物理カードをNFCリーダーにタッチして打刻を記録します。
-- **既存ハードウェアの活用**: Raspberry Pi 2や旧型PCを動作環境として想定し、軽量に動作します。
-- **エラー防止処理**: 5分以内の連続打刻の無視、15時間経過後の自動タイムアウト、日またぎの判定などをシステム側で処理します。
+## Design Principles
 
-## システム構成
-1. **エッジ (Pi 2)**: Sony RC-S300をPCSC経由で制御し、NFCのUIDを読み取ります。
-2. **ロジック**: Pythonで打刻状態を管理し、異常検知（`missing_out`等）や労働時間の丸め処理を行います。
-3. **バックエンド (GAS)**: HTTPS APIを介してGoogleスプレッドシートへデータを同期します。
-4. **通知・表示**: DiscordのWebhookを利用し、旧型PC等の画面上に打刻結果のフィードバックを表示します。
-
-## 主な機能
-- **低リソース動作**: 旧型SBCやPCで動作するよう設計されています。
-- **リトライ処理**: ネットワーク通信のエラーに対するAPIリトライロジックを実装しています。
-- **ルール設定**: 従業員ごとの`.env`ファイルを用いて、時給および丸め単位（分）を設定します。
-
-</details>
-
-## System Architecture
-
-```
-[NFC Card] → [Sony RC-S300] → [Pi 2 / Linux PC]
-                                      │
-                         attendance_reader.py   (PCSC, state machine)
-                                      │
-                         attendance_discord.py  (tail events → Discord)
-                         attendance_payroll.py  (daily cron → GAS)
-                                      │
-                              [Google Sheets]  ←  GAS Web App
-```
-
-1. **Edge (Pi 2)**: NFC UID capture using Sony RC-S300 via PCSC / opensc-tool.
-2. **Logic**: State management (5-min debounce, 15-hour timeouts), anomaly flagging, and time rounding implemented in Python.
-3. **Backend (GAS)**: Synchronization to Google Sheets via HTTPS API.
-4. **Notification**: Real-time feedback via Discord webhook for check-in/out verification on a repurposed PC display.
-
-## Design Concept
-
-- **Simple Operation**: Users record attendance solely by tapping physical cards.
-- **Hardware Utilization**: Designed to operate on low-resource hardware. No pip dependencies — stdlib only.
-- **Input Validation**: Automatically handles debouncing, timeouts, and cross-day logic to prevent invalid data entries.
+- **操作の単純化** — 従業員が覚えることはカードをタッチするだけ
+- **既存ハードウェア活用** — Raspberry Pi 2 や旧型 PC で動作。pip 依存なし（標準ライブラリのみ）
+- **エラー防止** — デバウンス・タイムアウト・日またぎ判定をすべてシステム側で処理
 
 ## Requirements
 
-### Hardware
-- Sony RC-S300/P (PaSoRi) or compatible PCSC NFC reader
-- Raspberry Pi 2 / any Linux PC (Ubuntu 22.04+, Debian 11+, Raspberry Pi OS)
+### ハードウェア
 
-### Software
+- Sony RC-S300/P（PaSoRi）または PCSC 互換 NFC リーダー
+- Raspberry Pi 2 / 任意の Linux PC（Ubuntu 22.04+、Debian 11+、Raspberry Pi OS）
+
+### ソフトウェア
+
 ```bash
-# System packages (apt)
 sudo apt update
 sudo apt install -y pcscd libccid opensc
-
-# Python 3.11+ with zoneinfo (standard library)
-python3 --version
+python3 --version  # 3.11 以上
 ```
 
-> **Note**: This project has **no pip dependencies**. All Python code uses the standard library only.
+pip 依存はない。Python コードはすべて標準ライブラリのみで動作する。
 
-## Getting Started
+## Setup
 
 ### 1. Clone
 
@@ -85,48 +53,35 @@ git clone https://github.com/yktsnet/nfc-attendance-kit.git ~/nfc
 cd ~/nfc
 ```
 
-### 2. System service for PCSC
+### 2. PCSC サービスの起動
 
 ```bash
 sudo systemctl enable --now pcscd
-```
 
-Verify the NFC reader is detected:
-
-```bash
+# リーダーが認識されているか確認
 opensc-tool --list-readers
-# Expected: 0: Sony RC-S300 ...
+# → 0: Sony RC-S300 ...
 ```
 
-### 3. Configure secrets
+### 3. シークレット設定
 
 ```bash
-# Attendance config
 cp config/attendance/discord.env.example config/attendance/discord.env
 cp config/attendance/gas.env.example     config/attendance/gas.env
 
-# Edit each file and fill in real values
 nano config/attendance/discord.env
 nano config/attendance/gas.env
 ```
 
-### 4. Register NFC cards
+### 4. NFC カード登録
 
-Copy the UID map template and map each card UID to an employee ID:
+UID マップのテンプレートをコピーし、カード UID と社員 ID を対応付ける。
 
 ```bash
 cp config/attendance/uid_map.json.example config/attendance/uid_map.json
 nano config/attendance/uid_map.json
 ```
 
-Find your card's UID by tapping it and running:
-
-```bash
-opensc-tool --reader 0 --wait --card-driver default --send-apdu FF:CA:00:00:00
-# Look for the "Received" hex bytes in the output
-```
-
-Format:
 ```json
 {
   "0123456789ABCD": "emp01",
@@ -134,7 +89,14 @@ Format:
 }
 ```
 
-### 5. Configure employees
+カードの UID は次のコマンドで確認できる。
+
+```bash
+opensc-tool --reader 0 --wait --card-driver default --send-apdu FF:CA:00:00:00
+# "Received" 行の16進バイト列が UID
+```
+
+### 5. 社員設定
 
 ```bash
 cp config/employees/emp.env.example config/employees/emp01.env
@@ -142,75 +104,96 @@ nano config/employees/emp01.env
 ```
 
 ```ini
-NAME=Taro_Yamada
+NAME=山田太郎
 HOURLY_YEN=1500
 ROUND_UNIT_MINUTES=5
 ```
 
-The filename (e.g. `emp01.env`) must match the value in `uid_map.json`.
+ファイル名（`emp01.env`）は `uid_map.json` の値と一致させる。
 
-### 6. Deploy systemd services (user-level)
-
-All three services run as the current user under `~/.config/systemd/user/`.
+### 6. systemd サービスのデプロイ
 
 ```bash
 mkdir -p ~/.config/systemd/user
 cp config/systemd/usr/*.service ~/.config/systemd/user/
-cp config/systemd/usr/*.timer  ~/.config/systemd/user/
+cp config/systemd/usr/*.timer   ~/.config/systemd/user/
 
 systemctl --user daemon-reload
 
-# NFC reader (always running on the edge device)
 systemctl --user enable --now attendance-reader
-
-# Discord notifier (always running on the notification PC)
 systemctl --user enable --now attendance-discord
-
-# Payroll sync (daily timer)
 systemctl --user enable --now attendance-payroll.timer
 
-# Keep user services running after logout
 loginctl enable-linger $USER
 ```
 
-Check status:
+動作確認：
+
 ```bash
 systemctl --user status attendance-reader
 journalctl --user -u attendance-reader -f
 ```
 
-### 7. Deploy Google Apps Script
+### 7. Google Apps Script のデプロイ
 
-1. Create a new Google Spreadsheet and note the **Spreadsheet ID** from the URL.
-2. Open **Extensions → Apps Script**.
-3. Create two files: `Code.js` and `payroll_views.js` (contents in `gas/nfc_reader/`).
-4. In `Code.js`, set `SPREADSHEET_ID` to your spreadsheet's ID.
-5. In `payroll_views.js`, update `PAYROLL_VIEW_EMP_LABELS` with your employee IDs and names.
-6. Click **Deploy → New deployment → Web App**.
-   - Execute as: **Me**
-   - Who has access: **Anyone** (requests are validated by `ATT_GAS_TOKEN`)
-7. Copy the deployment URL into `config/attendance/gas.env` as `ATT_GAS_URL`.
+1. Google スプレッドシートを新規作成し、URL から **スプレッドシート ID** を控える
+2. **拡張機能 → Apps Script** を開く
+3. `gas/nfc_reader/` 内の `Code.js` と `payroll_views.js` を貼り付ける
+4. `Code.js` の `SPREADSHEET_ID` を手順 1 の ID に書き換える
+5. `payroll_views.js` の `PAYROLL_VIEW_EMP_LABELS` に社員 ID と氏名を設定する
+6. **デプロイ → 新しいデプロイ → ウェブアプリ** で公開
+   - 実行ユーザー: **自分**
+   - アクセスできるユーザー: **全員**（リクエストは `ATT_GAS_TOKEN` で検証）
+7. デプロイ URL を `config/attendance/gas.env` の `ATT_GAS_URL` に設定する
 
-## Service Layout
+## Services
 
-| Service | Role | Runs on |
+| サービス | 役割 | 起動対象 |
 |---------|------|---------|
-| `attendance-reader` | Reads NFC card UIDs, writes event log | Edge device (Pi / PC with reader) |
-| `attendance-discord` | Tails event log, posts to Discord | Notification display PC |
-| `attendance-payroll.timer` | Daily payroll build + GAS sync | Any device on the same filesystem |
+| `attendance-reader` | NFC UID 読み取り・イベントログ書き込み | リーダー接続機 |
+| `attendance-discord` | イベントログを tail して Discord 投稿 | 通知表示 PC |
+| `attendance-payroll.timer` | 日次給与計算・GAS 同期 | 共有ファイルシステムにアクセスできる機器 |
 
-All services share the same `~/nfc/` directory. On a single-machine setup, all three can run on one device.
+1 台構成の場合は 3 サービスすべてを同一機で動かせる。
 
-## Key Features
+## Adding an Employee
 
-- **No pip dependencies**: stdlib only (`json`, `urllib`, `subprocess`, `zoneinfo`, …)
-- **Anomaly Detection**: Flags `missing_out`, `day_rollover`, `timeout_15h`, `double_in`, `orphan_out`
-- **API Retry Logic**: Configurable retries + sleep for GAS sync and Discord posting
-- **Time Rounding**: Per-employee configurable rounding unit (default 5 min)
-- **Month Rollover**: Payroll job covers previous month on the 1st–2nd of each month
+1. `sudo journalctl -fu attendance-reader.service` でログを監視しながら新カードをタッチ
+2. `"emp":"unknown"` の JSON に含まれる `uid` の値を確認
+3. `config/attendance/uid_map.json` に UID と新しい社員 ID を追記
+4. `config/employees/<emp_id>.env` を作成して氏名・時給・丸め単位を設定
+5. `sudo systemctl restart attendance-reader.service`（uid_map は起動時に読み込まれるため再起動必須）
+
+時給変更は `emp.env` を編集するだけでよい。給与計算時に都度読み込まれるためサービス再起動は不要。
+
+## Anomaly Flags
+
+`attendance_payroll.py` が出力する給与レコードには、以下のフラグが付与される場合がある。
+
+| フラグ | 意味 |
+|-------|------|
+| `missing_out` | IN のまま終了（タイムアウト・エラー等） |
+| `orphan_out` | 対応する IN なしに OUT を検出 |
+| `double_in` | OUT なしに再度 IN を検出 |
+| `cross_day` | IN と OUT が日付をまたいでいる |
+| `timeout_15h` | 15 時間超の打刻を自動クローズ |
+| `day_rollover` | 日付変更時の自動クローズ |
+| `missing_hourly_yen` | 社員の時給設定が見つからない |
+
+## Development & Testing
+
+```bash
+pip install pytest
+pytest
+```
+
+テストは `lib/` の 3 モジュール（状態機械・給与計算・ストア）を対象とし、標準ライブラリのみで動作する。CI は push / PR 時に Python 3.11・3.12 でテストを自動実行する。
 
 ## Tech Stack
 
-- **Language**: Python 3.11+, JavaScript (GAS)
-- **Infrastructure**: Linux (systemd user services), Google Apps Script
-- **Hardware**: Sony RC-S300/P, Raspberry Pi 2, Repurposed Laptop
+| 区分 | 内容 |
+|-----|------|
+| 言語 | Python 3.11+（標準ライブラリのみ）、JavaScript（GAS） |
+| インフラ | Linux systemd user services、Google Apps Script |
+| ハードウェア | Sony RC-S300/P、Raspberry Pi 2、旧型 PC |
+| 通知 | Discord Webhook |

@@ -29,12 +29,12 @@ Sony RC-S300（PaSoRi）と Raspberry Pi を組み合わせた打刻・給与計
 
 ## Requirements
 
-### ハードウェア
+### Hardware
 
 - Sony RC-S300/P（PaSoRi）または PCSC 互換 NFC リーダー
 - Raspberry Pi 2 / 任意の Linux PC（Ubuntu 22.04+、Debian 11+、Raspberry Pi OS）
 
-### ソフトウェア
+### Software
 
 ```bash
 sudo apt update
@@ -53,7 +53,7 @@ git clone https://github.com/yktsnet/nfc-attendance-kit.git ~/nfc
 cd ~/nfc
 ```
 
-### 2. PCSC サービスの起動
+### 2. PCSC Service
 
 ```bash
 sudo systemctl enable --now pcscd
@@ -63,7 +63,7 @@ opensc-tool --list-readers
 # → 0: Sony RC-S300 ...
 ```
 
-### 3. シークレット設定
+### 3. Secrets
 
 ```bash
 cp config/attendance/discord.env.example config/attendance/discord.env
@@ -73,7 +73,7 @@ nano config/attendance/discord.env
 nano config/attendance/gas.env
 ```
 
-### 4. NFC カード登録
+### 4. NFC Card Registration
 
 UID マップのテンプレートをコピーし、カード UID と社員 ID を対応付ける。
 
@@ -96,7 +96,7 @@ opensc-tool --reader 0 --wait --card-driver default --send-apdu FF:CA:00:00:00
 # "Received" 行の16進バイト列が UID
 ```
 
-### 5. 社員設定
+### 5. Employee Config
 
 ```bash
 cp config/employees/emp.env.example config/employees/emp01.env
@@ -111,7 +111,7 @@ ROUND_UNIT_MINUTES=5
 
 ファイル名（`emp01.env`）は `uid_map.json` の値と一致させる。
 
-### 6. systemd サービスのデプロイ
+### 6. systemd Deploy
 
 ```bash
 mkdir -p ~/.config/systemd/user
@@ -134,7 +134,7 @@ systemctl --user status attendance-reader
 journalctl --user -u attendance-reader -f
 ```
 
-### 7. Google Apps Script のデプロイ
+### 7. Google Apps Script Deploy
 
 1. Google スプレッドシートを新規作成し、URL から **スプレッドシート ID** を控える
 2. **拡張機能 → Apps Script** を開く

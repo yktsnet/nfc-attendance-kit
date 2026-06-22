@@ -11,7 +11,7 @@
     "allow": [
       "Bash(git *)",
       "Bash(gh pr *)",
-      "Bash(pytest*)",
+      "Bash(nix-shell -p *)",
       "Bash(python -m py_compile *)"
     ]
   },

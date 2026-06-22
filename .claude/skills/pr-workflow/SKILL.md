@@ -14,7 +14,7 @@ disable-model-invocation: true
 3. `git checkout -b claude/{id}-{branch-slug}`（id と branch-slug は issue から取得）
 4. 対象ファイルを読んで実装。Issue ファイルの `status:` は変更しない（issue-finish が処理する）。
 5. issue の「確認」項目に従い静的チェックを実施する
-   - `pytest`
+   - `nix-shell -p python3 python3Packages.pytest --run "pytest"`
    - 変更した `.py` に `python -m py_compile`
    - issue 固有の確認があればそれも実施
 6. `git add {変更したファイル}`

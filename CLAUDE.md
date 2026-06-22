@@ -4,8 +4,9 @@
 
 ## コマンド
 
-- テスト: `pytest`（pytest.ini で pythonpath=. 設定済み）
+- テスト: `nix-shell -p python3 python3Packages.pytest --run "pytest"`（pytest.ini で pythonpath=. 設定済み）
 - 構文チェック: `python -m py_compile lib/payroll_calc.py`（変更ファイルごと）
+- **`pip install` を直接実行しない**。pytest 等の依存は `nix-shell -p` で取る
 
 ## アーキテクチャの要点
 
@@ -18,6 +19,6 @@
 
 ## 検証手段
 
-- `pytest`
+- `nix-shell -p python3 python3Packages.pytest --run "pytest"`
 - 変更した `.py` に `python -m py_compile`
 - `core/` の実行・NFC ハードウェア動作は user が確認

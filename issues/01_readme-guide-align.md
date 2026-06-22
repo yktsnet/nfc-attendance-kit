@@ -2,7 +2,7 @@
 id: 01
 skill: pr-workflow
 branch-slug: readme-guide-align
-github_issue:
+github_issue: 1
 status: open
 type: cleanup
 対象: README.md

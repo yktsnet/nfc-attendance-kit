@@ -29,6 +29,34 @@ A clock-in and payroll system combining the Sony RC-S300 (PaSoRi) with a Raspber
 - **Reuse existing hardware** — Works on Raspberry Pi 2 or older PCs. No pip dependencies (standard library only)
 - **Error prevention** — Debounce, timeout, and midnight rollover are all handled by the system
 
+## Tech Stack
+
+| Category | Details | Reason |
+|----------|---------|--------|
+| Language | Python 3.11+ (standard library only) | Zero pip dependencies simplifies deployment to Raspberry Pi |
+| Language | JavaScript (GAS) | Native integration with Google Sheets |
+| Infrastructure | Linux systemd user services | No root required; persistent with `loginctl enable-linger` |
+| Hardware | Sony RC-S300/P, Raspberry Pi 2 | Reuse of existing assets; PC/SC standard abstracts NFC readers |
+| Notifications | Discord Webhook | No bot required; one URL is all it takes |
+
+## Design Decisions
+
+- **Standard library only**: Eliminates pip install, enabling clone-and-run. Works on Raspberry Pi OS Python with no additional packages.
+- **GAS (Google Apps Script)**: Google Sheets chosen as the payroll aggregation target. No dedicated server or DB needed; viewing, sharing, and printing delegated to Google.
+- **systemd user services**: No root required; scales from single to multi-machine. Daily batch managed declaratively with timers.
+- **File-based state management (`state/`)**: No DB; attendance persisted as JSON logs. Backups done with `cp`.
+
+## Scope
+
+**Focus:**
+- Detecting, recording, notifying, and calculating payroll from NFC card taps
+- Operation in small businesses (dozens of employees or fewer)
+
+**Out of Scope:**
+- Web UI / mobile app clock-in
+- Migration to cloud DB (PostgreSQL, etc.)
+- Attendance approval workflows and shift management
+
 ## Requirements
 
 ### Hardware
@@ -190,31 +218,3 @@ pytest
 ```
 
 Tests cover the 3 modules in `lib/` (state machine, payroll calculation, store) and run on the standard library only. CI automatically runs tests on Python 3.11 and 3.12 for every push and pull request.
-
-## Tech Stack
-
-| Category | Details | Reason |
-|----------|---------|--------|
-| Language | Python 3.11+ (standard library only) | Zero pip dependencies simplifies deployment to Raspberry Pi |
-| Language | JavaScript (GAS) | Native integration with Google Sheets |
-| Infrastructure | Linux systemd user services | No root required; persistent with `loginctl enable-linger` |
-| Hardware | Sony RC-S300/P, Raspberry Pi 2 | Reuse of existing assets; PC/SC standard abstracts NFC readers |
-| Notifications | Discord Webhook | No bot required; one URL is all it takes |
-
-## Design Decisions
-
-- **Standard library only**: Eliminates pip install, enabling clone-and-run. Works on Raspberry Pi OS Python with no additional packages.
-- **GAS (Google Apps Script)**: Google Sheets chosen as the payroll aggregation target. No dedicated server or DB needed; viewing, sharing, and printing delegated to Google.
-- **systemd user services**: No root required; scales from single to multi-machine. Daily batch managed declaratively with timers.
-- **File-based state management (`state/`)**: No DB; attendance persisted as JSON logs. Backups done with `cp`.
-
-## Scope
-
-**Focus:**
-- Detecting, recording, notifying, and calculating payroll from NFC card taps
-- Operation in small businesses (dozens of employees or fewer)
-
-**Out of Scope:**
-- Web UI / mobile app clock-in
-- Migration to cloud DB (PostgreSQL, etc.)
-- Attendance approval workflows and shift management

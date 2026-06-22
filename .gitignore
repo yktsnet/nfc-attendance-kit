@@ -10,3 +10,6 @@ config/employees/*.env
 
 # runtime state (attendance logs, payroll cache)
 state/
+
+# claude code local overrides
+.claude/settings.local.json

@@ -191,9 +191,28 @@ pytest
 
 ## Tech Stack
 
-| 区分 | 内容 |
-|-----|------|
-| 言語 | Python 3.11+（標準ライブラリのみ）、JavaScript（GAS） |
-| インフラ | Linux systemd user services、Google Apps Script |
-| ハードウェア | Sony RC-S300/P、Raspberry Pi 2、旧型 PC |
-| 通知 | Discord Webhook |
+| 区分 | 内容 | Reason |
+|-----|------|--------|
+| 言語 | Python 3.11+（標準ライブラリのみ） | pip 依存ゼロで Raspberry Pi へのデプロイを簡素化 |
+| 言語 | JavaScript（GAS） | Google スプレッドシートとのネイティブ連携 |
+| インフラ | Linux systemd user services | root 権限不要、`loginctl enable-linger` で常駐 |
+| ハードウェア | Sony RC-S300/P, Raspberry Pi 2 | 既存資産の活用。PC/SC 標準で NFC リーダーを抽象化 |
+| 通知 | Discord Webhook | Bot 不要、URL 1 つで導入完了 |
+
+## Design Decisions
+
+- **標準ライブラリのみ**: pip install を排除し、clone → 即実行を実現。Raspberry Pi OS の Python で追加パッケージなしに動く。
+- **GAS（Google Apps Script）**: 給与集計先として Google スプレッドシートを選択。専用サーバ・DB を持たず、閲覧・共有・印刷を Google 側に委譲。
+- **systemd user services**: root 不要で 1 台〜複数台構成に対応。timer で日次バッチを宣言的に管理。
+- **ファイルベースの状態管理（`state/`）**: DB を持たず JSON ログで打刻を永続化。バックアップは `cp` で完結。
+
+## Scope
+
+**Focus:**
+- NFC カードによる打刻の検知・記録・通知・給与計算
+- 小規模事業所（従業員数十名以下）での運用
+
+**Out of Scope:**
+- Web UI / モバイルアプリによる打刻
+- クラウド DB（PostgreSQL 等）への移行
+- 勤怠の承認ワークフロー・シフト管理

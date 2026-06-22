@@ -3,7 +3,7 @@ id: 01
 skill: pr-workflow
 branch-slug: readme-guide-align
 github_issue: 1
-status: open
+status: close
 type: cleanup
 対象: README.md
 内容: Tech Stack に選定理由を追加、Design Decisions・Scope セクションを追加し、docs-agents の readme-guide 構成に揃える

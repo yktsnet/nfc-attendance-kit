@@ -22,9 +22,9 @@ disable-model-invocation: true
    出力が issue の「対象」フィールドと完全一致することを確認する。
    不一致があれば実装に戻り修正する。一致してから次に進む。
 7. `git commit -m "{type}: {タイトル}"`
-8. PR ボディを `.git/pr_body.md` に書き出し、同内容を `issues/done/{id}_{branch-slug}_pr.md` にもコピーする。
+8. PR ボディを `issues/.pr_body_draft.md` に書き出し、同内容を `issues/done/{id}_{branch-slug}_pr.md` にもコピーする。
    `git add issues/done/{id}_{branch-slug}_pr.md` して `git commit -m "chore: add PR record {id}"` でコミットしてから PR を作成する。
-   `.git/pr_body.md` の内容:
+   `issues/.pr_body_draft.md` の内容:
    ```
    ## 変更内容
    {issue の内容フィールドを展開}
@@ -38,7 +38,7 @@ disable-model-invocation: true
    - config 変更の場合: .example の更新有無と設定反映確認手順
    - gas/ 変更の場合: GAS エディタでのデプロイ手順
    ```
-   `gh pr create --base main --title "{type}: {タイトル}" --body-file .git/pr_body.md`
+   `gh pr create --base main --title "{type}: {タイトル}" --body-file issues/.pr_body_draft.md`
 9. PR の URL を出力して終了
    ```
    ✅ PR created: {URL}

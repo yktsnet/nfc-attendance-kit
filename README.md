@@ -7,12 +7,33 @@
 Sony RC-S300（PaSoRi）と Raspberry Pi を組み合わせた打刻・給与計算システム。
 **NFC カードをタッチするだけ**で打刻が完了し、Discord 通知と Google スプレッドシートへの自動集計まで行う。
 
-<p align="center">
-  <picture>
-    <source media="(min-width: 800px)" srcset="./src/nfc-attendance-kit.svg" width="400">
-    <img src="./src/nfc-attendance-kit.svg" alt="NFC Attendance Architecture" style="max-width: 100%;" width="800">
-  </picture>
-</p>
+```mermaid
+flowchart TD
+    User(["👤 Staff Member"])
+    
+    subgraph Edge["Edge Node (Pi 2)"]
+        Reader["NFC Reader"]
+        Logic{{"Python Service"}}
+        Reader -- "UID Scan" --> Logic
+    end
+    
+    subgraph Cloud["Cloud Backend"]
+        GAS["API Gateway (GAS)"]
+        Sheets[("Database (Google Sheets)")]
+        GAS -- "Sync" --> Sheets
+    end
+    
+    subgraph Kiosk["Dashboard (Old Laptop)"]
+        Webhook("💬 Discord Webhook")
+        Display["Kiosk View"]
+        Webhook -- "Real-time UI" --> Display
+    end
+    
+    User == "NFC Tap" ==> Reader
+    Logic -. "HTTPS POST" .-> GAS
+    Logic -. "JSON Payload" .-> Webhook
+```
+
 
 ## Architecture
 

@@ -52,6 +52,7 @@
 - `sweep_errors`: 入場中でないUID、および状態が空の場合はエラーを返さない。
 - `sweep_errors`: 複数UIDが存在する場合、入場中のUIDのみがエラー対象になる。
 - `sweep_errors` でday_rolloverエラーが発行された後、そのUIDは「外にいる」状態になり、次のタップはINとして扱われる。
+- `State.from_current_month(repo_root)`: 現在月（`now_jst()` 基準）のイベントファイルから状態を復元する。IN のみのUIDは入場中（次タップはOUT、従業員IDも復元）、IN→OUT済みのUIDは同日中の再タップ無視、イベント無しは空状態（初回タップはIN）として復元され、先月のイベントは対象外。
 
 | 保証（要約） | 対応テスト |
 |---|---|
@@ -73,6 +74,7 @@
 | 複数UIDでは入場中のみ対象 | `test_multiple_uids_only_inside_flagged` |
 | イベントの必須フィールド | `test_event_has_required_fields` |
 | ERRORイベントのcodeフィールド有無 | `test_error_event_has_code`, `test_non_error_event_has_no_code` |
+| 現在月からの状態復元 | `test_restores_inside_state_and_emp`, `test_restores_done_day_after_out`, `test_no_events_restores_empty_state`, `test_reads_only_current_month` |
 
 ### 3. `tests/test_attendance_store.py` — lib/attendance_store.py (append_jsonl, append_event, iter_events_month, iter_payroll_month, month_events_path, month_payroll_path)
 
@@ -96,12 +98,6 @@
 | append_event → iter_events_month の往復 | `test_append_and_iter_events` |
 | append_jsonl → iter_payroll_month の往復 | `test_append_and_iter_payroll` |
 | 公開イテレータ経由での不正行スキップ | `test_malformed_and_blank_lines_skipped_via_public_iterator` |
-
-## Gaps
-
-以下は保証すべきと思われるが、対応するテストが無い。
-
-- `lib/attendance_rules.py` の `State.from_current_month(repo_root)` は `iter_events_month` からイベント列を読み、内部状態（入場中/退場、最終タイムスタンプ、従業員ID）を復元する公開ファクトリだが、直接のテストが無い。内部で `now_jst()`（現在時刻）に依存しており、既存テストの規約（`ts()` ヘルパによる固定日時の組み立て）では時刻を注入できないため、テスト追加は本タスクでは見送る。
 
 ## About
 

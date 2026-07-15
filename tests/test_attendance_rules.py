@@ -243,3 +243,65 @@ class TestEventFields:
         st = State.empty()
         result = apply_rules(st, ts(2026, 1, 10, 9, 0), UID, EMP)
         assert "code" not in result[0]
+
+
+# ---------------------------------------------------------------------------
+# State.from_current_month
+# ---------------------------------------------------------------------------
+
+
+class TestFromCurrentMonth:
+    def _write_events(self, repo_root, events):
+        from lib.attendance_store import append_event, month_events_path
+
+        path = month_events_path(repo_root, ts(2026, 1, 15, 0, 0))
+        for ev in events:
+            append_event(path, ev)
+
+    def _restore(self, monkeypatch, repo_root):
+        import lib.attendance_rules as rules
+
+        monkeypatch.setattr(rules, "now_jst", lambda: ts(2026, 1, 15, 12, 0))
+        return State.from_current_month(repo_root)
+
+    def test_restores_inside_state_and_emp(self, monkeypatch, tmp_path):
+        self._write_events(tmp_path, [
+            {"id": "1", "ts": ts(2026, 1, 15, 9, 0), "uid": UID, "emp": EMP, "act": "IN"},
+        ])
+        st = self._restore(monkeypatch, tmp_path)
+
+        # 入場中として復元され、次のタップは OUT になる
+        result = apply_rules(st, ts(2026, 1, 15, 10, 0), UID, "unknown")
+        assert len(result) == 1
+        assert result[0]["act"] == "OUT"
+        assert result[0]["emp"] == EMP  # 従業員IDも復元されている
+
+    def test_restores_done_day_after_out(self, monkeypatch, tmp_path):
+        self._write_events(tmp_path, [
+            {"id": "1", "ts": ts(2026, 1, 15, 9, 0), "uid": UID, "emp": EMP, "act": "IN"},
+            {"id": "2", "ts": ts(2026, 1, 15, 11, 0), "uid": UID, "emp": EMP, "act": "OUT"},
+        ])
+        st = self._restore(monkeypatch, tmp_path)
+
+        # OUT 済みとして復元され、同日中の再タップは無視される
+        assert apply_rules(st, ts(2026, 1, 15, 11, 30), UID, EMP) == []
+
+    def test_no_events_restores_empty_state(self, monkeypatch, tmp_path):
+        st = self._restore(monkeypatch, tmp_path)
+
+        # イベント無しは空の状態。初回タップは IN になる
+        result = apply_rules(st, ts(2026, 1, 15, 9, 0), UID, EMP)
+        assert len(result) == 1
+        assert result[0]["act"] == "IN"
+
+    def test_reads_only_current_month(self, monkeypatch, tmp_path):
+        from lib.attendance_store import append_event, month_events_path
+
+        # 先月のイベント（IN のまま）は現在月の復元対象にならない
+        prev = month_events_path(tmp_path, ts(2025, 12, 20, 0, 0))
+        append_event(prev, {"id": "1", "ts": ts(2025, 12, 20, 9, 0), "uid": UID, "emp": EMP, "act": "IN"})
+        st = self._restore(monkeypatch, tmp_path)
+
+        result = apply_rules(st, ts(2026, 1, 15, 9, 0), UID, EMP)
+        assert len(result) == 1
+        assert result[0]["act"] == "IN"

@@ -9,6 +9,7 @@ from lib.attendance_store import (
     append_event,
     append_jsonl,
     iter_events_month,
+    iter_payroll_month,
     month_events_path,
     month_payroll_path,
 )
@@ -145,3 +146,43 @@ class TestAppendEventRoundtrip:
     def test_iter_nonexistent_month_returns_empty(self, tmp_path):
         events = list(iter_events_month(tmp_path, "2099-12"))
         assert events == []
+
+
+# ---------------------------------------------------------------------------
+# iter_payroll_month の往復
+# ---------------------------------------------------------------------------
+
+
+class TestIterPayrollMonth:
+    def test_append_and_iter_payroll(self, tmp_path):
+        p = month_payroll_path(tmp_path, "2026-01")
+        append_jsonl(p, {"id": "r1", "emp": "emp01", "yen": 1200})
+
+        records = list(iter_payroll_month(tmp_path, "2026-01"))
+        assert records == [{"id": "r1", "emp": "emp01", "yen": 1200}]
+
+    def test_iter_nonexistent_payroll_month_returns_empty(self, tmp_path):
+        records = list(iter_payroll_month(tmp_path, "2099-12"))
+        assert records == []
+
+
+# ---------------------------------------------------------------------------
+# iter_events_month（公開関数）経由での不正行スキップ
+# ---------------------------------------------------------------------------
+
+
+class TestIterEventsMonthRobustness:
+    def test_malformed_and_blank_lines_skipped_via_public_iterator(
+        self, tmp_path, caplog
+    ):
+        p = month_events_path(tmp_path, dt(2026, 1, 10))
+        p.parent.mkdir(parents=True)
+        p.write_text('{"emp":"emp01"}\n\nnot json\n[1,2,3]\n{"emp":"emp02"}\n')
+
+        with caplog.at_level(logging.WARNING, logger="lib.attendance_store"):
+            events = list(iter_events_month(tmp_path, "2026-01"))
+
+        assert len(events) == 2
+        assert events[0]["emp"] == "emp01"
+        assert events[1]["emp"] == "emp02"
+        assert any("malformed" in r.message for r in caplog.records)

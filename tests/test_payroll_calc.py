@@ -229,6 +229,19 @@ class TestUnknownEmp:
 # ---------------------------------------------------------------------------
 
 
+class TestMalformedTimestamp:
+    def test_unparseable_ts_excluded(self, repo):
+        events = [
+            {"ts": "not-a-timestamp", "emp": "emp01", "act": "IN"},
+            ev(ts(2026, 1, 10, 9, 0), "emp01", "IN"),
+            ev(ts(2026, 1, 10, 10, 0), "emp01", "OUT"),
+        ]
+        recs, summary = build_daily_payroll_records(repo, events)
+        assert len(recs) == 1
+        assert recs[0]["min_raw"] == 60
+        assert summary["events"] == 3
+
+
 class TestRecordId:
     def test_same_date_emp_gives_same_id(self, repo):
         events = [

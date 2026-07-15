@@ -88,6 +88,28 @@ class TestBasicSequence:
 
 
 # ---------------------------------------------------------------------------
+# unknown emp のタップ（uid_map に無いカード等）
+# ---------------------------------------------------------------------------
+
+
+class TestUnknownEmpTap:
+    def test_unknown_emp_tap_uses_last_known_emp(self):
+        st = State.empty()
+        apply_rules(st, ts(2026, 1, 10, 9, 0), UID, EMP)  # IN by known emp
+        result = apply_rules(st, ts(2026, 1, 10, 18, 0), UID, "unknown")  # OUT
+        assert result[0]["act"] == "OUT"
+        assert result[0]["emp"] == EMP
+
+    def test_unknown_emp_tap_does_not_overwrite_stored_emp(self):
+        st = State.empty()
+        apply_rules(st, ts(2026, 1, 10, 9, 0), UID, EMP)
+        apply_rules(st, ts(2026, 1, 10, 18, 0), UID, "unknown")  # OUT, emp unresolved
+        result = apply_rules(st, ts(2026, 1, 11, 9, 0), UID, "unknown")  # next IN
+        assert result[0]["act"] == "IN"
+        assert result[0]["emp"] == EMP
+
+
+# ---------------------------------------------------------------------------
 # day_rollover error
 # ---------------------------------------------------------------------------
 

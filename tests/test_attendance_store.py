@@ -186,3 +186,11 @@ class TestIterEventsMonthRobustness:
         assert events[0]["emp"] == "emp01"
         assert events[1]["emp"] == "emp02"
         assert any("malformed" in r.message for r in caplog.records)
+
+
+class TestAppendJsonlViaPublicIterator:
+    def test_appended_lines_read_back_in_order_via_public_iterator(self, tmp_path):
+        p = month_payroll_path(tmp_path, "2026-01")
+        append_jsonl(p, {"n": 1})
+        append_jsonl(p, {"n": 2})
+        assert list(iter_payroll_month(tmp_path, "2026-01")) == [{"n": 1}, {"n": 2}]

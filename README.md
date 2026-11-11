@@ -78,6 +78,8 @@ flowchart TD
 - クラウド DB（PostgreSQL 等）への移行
 - 勤怠の承認ワークフロー・シフト管理
 
+外へ約束している振る舞いとテストの対応は、[保証台帳](docs/guarantees/README.md) にまとめている。
+
 ## Requirements
 
 ### Hardware

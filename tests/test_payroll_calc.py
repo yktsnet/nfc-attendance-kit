@@ -264,3 +264,46 @@ class TestRecordId:
         recs1, _ = build_daily_payroll_records(repo, events1)
         recs2, _ = build_daily_payroll_records(repo, events2)
         assert recs1[0]["id"] != recs2[0]["id"]
+
+
+class TestLedgerGaps:
+    def _repo(self, tmp_path, env_text):
+        emp_dir = tmp_path / "config" / "employees"
+        emp_dir.mkdir(parents=True)
+        (emp_dir / "emp03.env").write_text(env_text)
+        return tmp_path
+
+    def test_zero_hourly_yen_sets_missing_hourly_yen(self, tmp_path):
+        root = self._repo(tmp_path, "NAME=T\nHOURLY_YEN=0\nROUND_UNIT_MINUTES=5\n")
+        events = [
+            ev(ts(2026, 1, 10, 9, 0), "emp03", "IN"),
+            ev(ts(2026, 1, 10, 10, 0), "emp03", "OUT"),
+        ]
+        recs, _ = build_daily_payroll_records(root, events)
+        assert "missing_hourly_yen" in recs[0]["flags"]
+        assert recs[0]["yen"] == 0
+
+    def test_negative_round_unit_defaults_to_5(self, tmp_path):
+        root = self._repo(tmp_path, "NAME=T\nHOURLY_YEN=1200\nROUND_UNIT_MINUTES=-3\n")
+        events = [
+            ev(ts(2026, 1, 10, 9, 0), "emp03", "IN"),
+            ev(ts(2026, 1, 10, 9, 7), "emp03", "OUT"),
+        ]
+        recs, _ = build_daily_payroll_records(root, events)
+        assert recs[0]["min"] == 5
+
+    def test_error_without_code_records_error_error(self, repo):
+        events = [ev(ts(2026, 1, 10, 9, 0), "emp01", "ERROR")]
+        recs, _ = build_daily_payroll_records(repo, events)
+        assert "error:error" in recs[0]["flags"]
+
+    def test_summary_flags_days_counts_flagged_records(self, repo):
+        events = [
+            ev(ts(2026, 1, 10, 9, 0), "emp01", "IN"),
+            ev(ts(2026, 1, 10, 10, 0), "emp01", "OUT"),
+            ev(ts(2026, 1, 11, 10, 0), "emp01", "OUT"),
+            ev(ts(2026, 1, 12, 9, 0), "emp01", "IN"),
+        ]
+        recs, summary = build_daily_payroll_records(repo, events)
+        assert len(recs) == 3
+        assert summary["flags_days"] == 2

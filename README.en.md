@@ -78,6 +78,8 @@ flowchart TD
 - Migration to cloud DB (PostgreSQL, etc.)
 - Attendance approval workflows and shift management
 
+The guarantees this system makes, and the tests that enforce them, are listed in the [Guarantee Ledger](docs/guarantees/README.md) (Japanese).
+
 ## Requirements
 
 ### Hardware
